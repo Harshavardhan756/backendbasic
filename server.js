@@ -14,7 +14,13 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // MongoDB Connection
-mongoose.connect("mongodb://localhost:27017/Mydb", {
+// mongoose.connect("mongodb://localhost:27017/Mydb", {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// });
+
+
+mongoose.connect("mongodb+srv://admin:admin@cluster0.bcdsb.mongodb.net/", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
