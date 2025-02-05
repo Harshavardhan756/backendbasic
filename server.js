@@ -2,24 +2,19 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 const app = express();
 const PORT = 5000;
-const JWT_SECRET = "your_secret_key"; // Replace with an actual secret key
+const JWT_SECRET = "your_secret_key"; // Replace with a strong secret key
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // MongoDB Connection
-// mongoose.connect("mongodb://localhost:27017/Mydb", {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-// });
-
-
 mongoose.connect("mongodb+srv://admin:admin@cluster0.bcdsb.mongodb.net/", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -27,6 +22,13 @@ mongoose.connect("mongodb+srv://admin:admin@cluster0.bcdsb.mongodb.net/", {
 const db = mongoose.connection;
 db.on("connected", () => console.log("Connected to MongoDB"));
 db.on("error", (error) => console.log("MongoDB connection error:", error));
+
+// Admin Schema to store receiving email
+const adminSchema = new mongoose.Schema({
+  email: { type: String, required: true }
+});
+
+const Admin = mongoose.model("Admin", adminSchema);
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -86,5 +88,43 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Start Server
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.post("/contact", async (req, res) => {
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ message: "All fields are required!" });
+  }
+
+  try {
+    // Fetch the admin's receiving email from MongoDB
+   
+    const receivingEmail = email;
+    console.log("📧 Sending email to:", receivingEmail);
+
+    // Configure Nodemailer
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "hv062545@gmail.com", // Replace with your actual email
+        pass: "jsbo jnrd iteg cxyn", // Use App Password if using Gmail
+      },
+    });
+
+    const mailOptions = {
+      from: email,
+      to: receivingEmail,
+      subject: `New Contact Form Submission from ${name}`,
+      text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent successfully!");
+    res.json({ message: "Thank you for reaching out! We'll get back to you soon." });
+
+  } catch (error) {
+    console.error("❌ Contact form submission error:", error); // Print the error in the terminal
+    res.status(500).json({ message: "Something went wrong. Please try again." });
+  }
+});
+
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
